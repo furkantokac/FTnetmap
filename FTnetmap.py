@@ -1,4 +1,4 @@
-# Example   : python FTnetmap.py -i 192.168.0.0-192.168.2.0
+# Example   : python FTnetmap.py -r 192.168.0.0-192.168.2.0
 # if you run like python FTnetmap.py, defaultly assing ip 192.168.0.0-192.168.2.0
 
 import subprocess, sys, getopt, threading, time, platform
@@ -13,18 +13,18 @@ fileName = ""
 
 def usage():
     print "-___________FTnetmap Tool Guide___________-"
-    print "Usage: python FTnetmap.py -e fileName.txt -i firstIP-lastIP"
+    print "Usage: python FTnetmap.py -e fileName.txt -r firstIP-lastIP"
     print "This command scan alive IP's between firstIP and lastIP and export IPs to fileName.txt"
     print ""
-    print "-i --interval - IP interval that will be checked."
+    print "-r --range    - IP range that will be checked."
     print "-d --detailed - See all details during process (May be unordered)."
     print "-h --help     - Help"
     print "-e --export   - Write alive hosts to file."
     print ""
     print "Examples:"
-    print "python FTnetmap.py -i 192.168.1.0-192.168.2.0"
-    print "python FTnetmap.py -d -i 192.168.1.0-192.168.1.255"
-    print "python FTnetmap.py -e fileName.txt -i 192.168.1.0-192.168.1.255"
+    print "python FTnetmap.py -r 192.168.1.0-192.168.2.0"
+    print "python FTnetmap.py -d -r 192.168.1.0-192.168.1.255"
+    print "python FTnetmap.py -e fileName.txt -r 192.168.1.0-192.168.1.255"
     print ""
     sys.exit(0)
     
@@ -36,13 +36,13 @@ def main():
     print ""
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:dhe:", ["interval", "detail", "help", "export"])
+        opts, args = getopt.getopt(sys.argv[1:], "r:dhe:", ["range", "detail", "help", "export"])
     except getopt.GetoptError as err:
         print str(err)
         usage()
     
     for o,a in opts:
-        if o in ("-i", "--interval"):
+        if o in ("-r", "--range"):
             ip = a
         elif o in ("-d", "--detail"):
             detailed = True
