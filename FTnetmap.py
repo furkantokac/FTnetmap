@@ -5,12 +5,12 @@ Functions
     parse_arguments()
     main()
     start_scanning(ip)
-    printHosts()
+    print_export_hosts()
     handle_ip_format(ip)
     ping_to_range(ipfirst, iplast)
     convert_ip_int(ip)
-    pingIp(ip, hostId)
-    runCommand(command)
+    ping_ip(ip, hostId)
+    run_command(command)
 '''
 
 import subprocess, sys, argparse, threading, time, platform, socket
@@ -65,7 +65,7 @@ def main():
     
     start_scanning(ip)
     aliveHostsIds.sort()
-    printHosts()
+    print_export_hosts()
 
 def start_scanning(ip):
     
@@ -89,7 +89,7 @@ def start_scanning(ip):
             repeatCounter+=1
         time.sleep(1)
 
-def printHosts():
+def print_export_hosts():
     global fileName
     
     print "\n[+] Alive Hosts"
@@ -147,7 +147,7 @@ def ping_to_range(ipfirst, iplast):
         threadNumber+=1
         while threadNumber > 255: # Maximum 255 thread can work at the same time
             time.sleep(1)
-        ipThread = threading.Thread(target=pingIp, args=(currentIP,hostId,))
+        ipThread = threading.Thread(target=ping_ip, args=(currentIP,hostId,))
         ipThread.start()
         hostId+=1
         
@@ -173,15 +173,15 @@ def convert_ip_int(ip):
     return int(ip[0]+((3-len(ip[1]))*'0'+ip[1])+((3-len(ip[2]))*'0'+ip[2])+((3-len(ip[3]))*'0'+ip[3]))
 
 # if ping successful, return 1 else return 0
-def pingIp(ip, hostId):
+def ping_ip(ip, hostId):
     global aliveHosts
     global aliveHostsIds
     global threadNumber
     
     if PLATFORM == 'Linux':
-        output = runCommand("ping -c 1 -w 1.5 "+ip)
+        output = run_command("ping -c 1 -w 1.5 "+ip)
     elif PLATFORM == 'Windows':
-        output = runCommand("ping -n 1 -w 1500 "+ip)
+        output = run_command("ping -n 1 -w 1500 "+ip)
     
     if  output == False or "Unreachable" in output or "timed out" in output:
         threadNumber-=1
@@ -190,12 +190,12 @@ def pingIp(ip, hostId):
         if verbose:
             print "%s %8s" % (ip, "ALIVE")
         
-        aliveHosts[hostId] = ip # This keeps IP's in dictionary
-        aliveHostsIds.append(hostId) # This keeps just ID's which we assigned. This necessary to sort IP number for output
-        threadNumber-=1 # One of the threads finished.
+        aliveHosts[hostId] = ip      # This keeps IPs in dictionary
+        aliveHostsIds.append(hostId) # This keeps just IDs which we assigned. This necessary to sort IP number for output
+        threadNumber-=1              # One of the threads finished.
         return 1
 
-def runCommand(command):
+def run_command(command):
     command = command.rstrip()
     
     # Run the command and get output
