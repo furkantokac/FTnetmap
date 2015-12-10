@@ -1,68 +1,63 @@
 # Example   : python FTnetmap.py -r 192.168.0.0-192.168.2.0
 # if you run like python FTnetmap.py, defaultly assing ip 192.168.0.0-192.168.2.0
 
-import subprocess, sys, getopt, threading, time, platform
+import subprocess, sys, argparse, threading, time, platform, socket
 
 PLATFORM = platform.system()
 
-detailed = False
-aliveHosts = dict()
-aliveHostsIds = list()
-threadNumber = 0
-fileName = ""
+verbose         = False
+fileName        = ""
+aliveHosts      = dict()
+aliveHostsIds   = list()
+threadNumber    = 0
 
 def usage():
     print "-___________FTnetmap Tool Guide___________-"
     print "Usage: python FTnetmap.py -e fileName.txt -r firstIP-lastIP"
-    print "This command scan alive IP's between firstIP and lastIP and export IPs to fileName.txt"
+    print "This command scan IPs between firstIP & lastIP, export IPs to fileName.txt"
     print ""
-    print "-r --range    - IP range that will be checked."
-    print "-d --detailed - See all details during process (May be unordered)."
-    print "-h --help     - Help"
-    print "-e --export   - Write alive hosts to file."
+    print "-r --range   - IP range that will be checked."
+    print "-e --export  - Write alive hosts to file."
+    print "-v --verbose - Deactive verbose mode."
+    print "-h --help    - Help."
     print ""
     print "Examples:"
     print "python FTnetmap.py -r 192.168.1.0-192.168.2.0"
-    print "python FTnetmap.py -d -r 192.168.1.0-192.168.1.255"
+    print "python FTnetmap.py -v -r 192.168.1.0-192.168.1.255"
     print "python FTnetmap.py -e fileName.txt -r 192.168.1.0-192.168.1.255"
     print ""
     sys.exit(0)
+
+def parse_arguments():
     
+    parser = argparse.ArgumentParser(description="FTnetmap", add_help=False)
+    parser.add_argument("-r", "--range",   dest="ip",       default="192.168.0.0-192.168.2.0", type=str)
+    parser.add_argument("-e", "--export",  dest="fileName", default="", type=str)
+    parser.add_argument("-v", "--verbose", dest="verbose",  default=True, action="store_false")
+    parser.add_argument("-h", "--help",    dest="help",     default=False, action="store_true")
+    
+    return parser.parse_args()
+
 def main():
-    global detailed
+    global verbose
     global aliveHostsIds
     global fileName
     ip = ""
     print ""
     
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "r:dhe:", ["range", "detail", "help", "export"])
-    except getopt.GetoptError as err:
-        print str(err)
-        usage()
-    
-    for o,a in opts:
-        if o in ("-r", "--range"):
-            ip = a
-        elif o in ("-d", "--detail"):
-            detailed = True
-        elif o in ("-h", "--help"):
-            usage()
-        elif o in ("-e", "--export"):
-            fileName = a
-        else:
-            assert False, "Unhandled Option"
-
-    if ip is "":
-        ip = "192.168.0.0-192.168.2.0"
-        detailed = True
+    parser = parse_arguments()
+    if parser.help: usage()
+    ip       = parser.ip
+    verbose  = parser.verbose
+    fileName = parser.fileName
     
     if "-" in ip and len(ip.split(".")) == 7:
         ipRangeHandler(ip)
     else:
-        print "ERROR: Please write IPs in correct format."
+        print "[!] ERROR: Please write IPs in correct format."
         usage()
     
+    #Sleep till all threads finish
     repeatCounter=0
     temp=0
     time.sleep(1)
@@ -77,26 +72,25 @@ def main():
     printHosts()
     
 def printHosts():
-    global aliveHostsIds
-    global aliveHosts
     global fileName
     
     print "\nAlive Hosts"
-    for i in aliveHostsIds:
-        print aliveHosts[i]
-    print len(aliveHostsIds), "hosts are alive.\n"
-
     if fileName is not "":
         fileName = open(fileName, "w")
         for i in aliveHostsIds:
+            print "[+]", aliveHosts[i]
             fileName.write(aliveHosts[i]+"\n")
         fileName.close()
+    else:
+        for i in aliveHostsIds:
+            print "[+]", aliveHosts[i]
+    print len(aliveHostsIds), "hosts are alive.\n"
 
 def ipRangeHandler(ip):
     global threadNumber
     
-    ipfirst = (ip.split("-")[0]).split(".") # storage ip like ("192", "168", "1", "0")
-    iplast  = (ip.split("-")[1]).split(".") # storage ip like ("192", "168", "2", "0")
+    ipfirst = (ip.split("-")[0]).split(".") # store ip like ("192", "168", "1", "0")
+    iplast  = (ip.split("-")[1]).split(".") # store ip like ("192", "168", "2", "0")
     
     # Format checking. If format is ok, it will continue.
     for i in xrange(3):
@@ -112,61 +106,58 @@ def ipRangeHandler(ip):
             ipfirst[i]="255"
         elif int(ipfirst[i])<0:
             ipfirst[i]="0"
-    
+
+    ipfirstint = convertIpInt(map(str, ipfirst))
+    iplastint  = convertIpInt(map(str, iplast))
+        
+    if ipfirstint>=iplastint:
+        print "[!] ERROR: First IP cannot be bigger or equal to last IP."
+        usage()
+        
     # String to integer
     ipfirst = map(int, ipfirst)
     iplast = map(int, iplast)
     
-    # IPs changing in which line. Flag will keep line number.
-    flag = 0
-    for i in xrange(4):
-        if iplast[i] != ipfirst[i]:
-            if iplast[i] < ipfirst[i]:
-                print "ERROR: First IP cannot be bigger than second IP."
-                usage()
-            flag = i
-            break
+    # Scan info
+    print "[+] IP range     : " + ip.split("-")[0]
+    print "                   " + ip.split("-")[1]
+    print "[+] Verbose mode : " + ("ON" if verbose else "OFF")
+    print "[+] Export mode  : " + (fileName if fileName!="" else "OFF")
+    print "[.] Scanning...\n"
     
     hostId = 0
     # Start main process
-    while ipfirst is not iplast:
+    ipfirstint = convertIpInt(map(str, ipfirst))
+    iplastint  = convertIpInt(map(str, iplast))
+    while iplastint > ipfirstint:
         currentIP = str(ipfirst[0]) + "." + str(ipfirst[1]) + "." + str(ipfirst[2]) + "." + str(ipfirst[3])
         threadNumber+=1
-        while threadNumber > 100: # Maximum 100 thread can work at the same time
+        while threadNumber > 255: # Maximum 255 thread can work at the same time
             time.sleep(1)
         ipThread = threading.Thread(target=pingIp, args=(currentIP,hostId,))
         ipThread.start()
         hostId+=1
         
-        # This part makes accurate increment in ip ( Code will be improved )
+        ipfirstint = convertIpInt(map(str, ipfirst))
+        iplastint  = convertIpInt(map(str, iplast))
+        
+        # This part makes accurate increment in ip
         ipfirst[3] += 1
-        if 3 == flag:
-            if ipfirst[3] > iplast[3]:
-                ipfirst[3] = iplast[3]
-                break
-        elif ipfirst[3] > 255:
+        if ipfirstint > iplastint:
+            ipfirst = iplast
+            break
+        if ipfirst[3] > 255:
             ipfirst[3] = 0
             ipfirst[2] += 1
-            if 2 == flag:
-                if ipfirst[2] > iplast[2]:
-                    flag+=1
-                    ipfirst[2] = iplast[2]
-                    ipfirst[3] = 1
-            elif ipfirst[2] > 255:
+            if ipfirst[2] > 255:
                 ipfirst[2] = 0
                 ipfirst[1] += 1
-                if 1 == flag:
-                    if ipfirst[1] > iplast[1]:
-                        flag+=1
-                        ipfirst[1] = iplast[1]
-                        ipfirst[2] = 1
-                elif ipfirst[1] > 255:
+                if ipfirst[1] > 255:
                     ipfirst[1] = 0
                     ipfirst[0] += 1
-                    if ipfirst[0] > iplast[0]:
-                        flag+=1
-                        ipfirst[0] = iplast[0]
-                        ipfirst[1] = 1
+
+def convertIpInt(ip):
+    return int(ip[0]+((3-len(ip[1]))*'0'+ip[1])+((3-len(ip[2]))*'0'+ip[2])+((3-len(ip[3]))*'0'+ip[3]))
 
 # if ping successful, return 1 else return 0
 def pingIp(ip, hostId):
@@ -179,28 +170,29 @@ def pingIp(ip, hostId):
     elif PLATFORM == 'Windows':
         output = runCommand("ping -n 1 -w 1000 "+ip)
     
-    if "Failed" in output or "Unreachable" in output or "timed out" in output:
+    if  output == False or "Unreachable" in output or "timed out" in output:
         threadNumber-=1
         return 0
     else:
-        if detailed==True:
-            print "%s %8s" % (ip, "ALIVE") 
-        
+        if verbose:
+            print "%s %8s" % (ip, "ALIVE")
+            
         aliveHosts[hostId] = ip # This keeps IP's in dictionary
         aliveHostsIds.append(hostId) # This keeps just ID's which we assigned. This necessary to sort IP number for output
         threadNumber-=1 # One of the threads finished.
         return 1
-    
+
 def runCommand(command):
     command = command.rstrip()
     
-    # Run the command and get output back
+    # Run the command and get output
     try:
         output = subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True)
     except:
-        output= "Failed to execute command.\n"
+        output = False
     
     return output
 
-main()
-raw_input("Please enter to exit...")
+if __name__ == '__main__':
+    main()
+    raw_input("Please enter to exit...")
