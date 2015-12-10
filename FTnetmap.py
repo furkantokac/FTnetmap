@@ -1,5 +1,17 @@
-# Example   : python FTnetmap.py -r 192.168.0.0-192.168.2.0
-# if you run like python FTnetmap.py, defaultly assing ip 192.168.0.0-192.168.2.0
+'''Example   : python FTnetmap.py -r 192.168.0.0-192.168.2.0
+   if you run like python FTnetmap.py, defaultly assing ip 192.168.0.0-192.168.2.0
+Functions
+    usage()
+    parse_arguments()
+    main()
+    start_scanning(ip)
+    printHosts()
+    handle_ip_format(ip)
+    ping_to_range(ipfirst, iplast)
+    convert_ip_int(ip)
+    pingIp(ip, hostId)
+    runCommand(command)
+'''
 
 import subprocess, sys, argparse, threading, time, platform, socket
 
