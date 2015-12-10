@@ -1,4 +1,4 @@
-FTnetmap Version 0.5
+FTnetmap Version 1.0
 
 HATALAR:
 Rapor edilen bir hata yok.
@@ -21,11 +21,11 @@ Kullanım: python FTnetmap.py -e fileName.txt -r firstIP-lastIP
 Yukarıdaki komut firstIP ve lastIP arasındaki IPlerin aktif olup olmadığını kontrol edip fileName.txt dosyasına aktaracak.
 
 -r --range    - Kontrol edilecek IP aralığı.
--d --detailed - Çalışma esnasında program detayları gösterecek. (IPler sıralanmamış olabilir.)
+-v --verbose  - Çalışma esnasında program detayları gösterecek. (IPler sıralanmamış olabilir.)
 -h --help     - Yardım
 -e --export   - Aktif IPleri dosyaya yazdır.
 
 Örnekler:
 python FTnetmap.py -r 192.168.1.0-192.168.2.0
-python FTnetmap.py -d -r 192.168.1.0-192.168.1.255
+python FTnetmap.py -v -r 192.168.1.0-192.168.1.255
 python FTnetmap.py -e fileName.txt -r 192.168.1.0-192.168.1.255
