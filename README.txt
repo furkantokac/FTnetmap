@@ -4,7 +4,7 @@ BUGS:
 No reported.
 
 UNDER DEVELOPMENT:
--Will show more details about host.
+-Port scan.
 
 CURRENT FEATURES:
 -Search alive hosts between 2 IPs.
