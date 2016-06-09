@@ -4,7 +4,7 @@ HATALAR:
 Rapor edilen bir hata yok.
 
 GELİŞTİRME SÜRECİNDEKİ ÖZELLİKLER:
--Host hakkında daha çok bilgi verilecek.
+-Port taraması.
 
 ŞİMDİKİ ÖZELLİKLER:
 -2 IP arasındaki tüm IPlerin aktif olup olmadığını kontrol etmek.
