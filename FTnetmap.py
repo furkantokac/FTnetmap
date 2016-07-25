@@ -178,10 +178,10 @@ def ping_ip(ip, hostId):
     global aliveHostsIds
     global threadNumber
     
-    if PLATFORM == 'Linux':
-        output = run_command("ping -c 1 -w 1.5 "+ip)
-    elif PLATFORM == 'Windows':
+    if PLATFORM == 'Windows':
         output = run_command("ping -n 1 -w 1500 "+ip)
+    else:
+        output = run_command("ping -c 1 -w 1.5 "+ip)
     
     if  output == False or "Unreachable" in output or "timed out" in output:
         threadNumber-=1
